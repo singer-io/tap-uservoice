@@ -6,7 +6,11 @@ class TeamsStream(BaseStream):
 
     API_PATH = '/api/v2/admin/teams'
     TABLE = 'teams'
-    SCHEMA = None
+    SCHEMA = with_properties({
+        "id": {"type": "integer"},
+        "name": {"type": "string"},
+        "members_count": {"type": "integer"},
+    })
 
     def get_stream_data(self, result):
         return result.get('teams')

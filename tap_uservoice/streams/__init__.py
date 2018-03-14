@@ -13,6 +13,7 @@ from tap_uservoice.streams.requests import RequestsStream
 from tap_uservoice.streams.segmented_values import SegmentedValuesStream
 from tap_uservoice.streams.segments import SegmentsStream
 from tap_uservoice.streams.status_updates import StatusUpdatesStream
+from tap_uservoice.streams.statuses import StatusesStream
 from tap_uservoice.streams.suggestions import SuggestionsStream
 from tap_uservoice.streams.supporters import SupportersStream
 from tap_uservoice.streams.teams import TeamsStream
@@ -33,6 +34,7 @@ __all__ = AVAILABLE_STREAMS = [
     SegmentedValuesStream,
     SegmentsStream,
     StatusUpdatesStream,
+    StatusesStream,
     SuggestionsStream,
     SupportersStream,
     TeamsStream,
