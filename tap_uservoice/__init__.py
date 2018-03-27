@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import sys
 
 import singer
 
@@ -28,7 +29,7 @@ def do_discover(args):
 
         catalog += stream.generate_catalog()
 
-    print(json.dumps({'streams': catalog}))
+    json.dump({'streams': catalog}, sys.stdout, indent=4)
 
 
 def get_streams_to_replicate(config, state, catalog, client):
@@ -66,6 +67,9 @@ def do_sync(args):
             stream.state = state
             stream.sync()
             state = stream.state
+        except OSError as e:
+            LOGGER.error(str(e))
+            exit(e.errno)
 
         except Exception as e:
             LOGGER.error(str(e))
@@ -74,7 +78,11 @@ def do_sync(args):
     save_state(state)
 
 
+@singer.utils.handle_top_exception(LOGGER)
 def main():
+    args = singer.utils.parse_args(
+        required_config_keys=['client_id', 'client_secret', 'subdomain'])
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -96,15 +104,10 @@ def main():
 
     args = parser.parse_args()
 
-    try:
-        if args.discover:
-            do_discover(args)
-        else:
-            do_sync(args)
-    except RuntimeError as exception:
-        LOGGER.error(str(exception))
-        LOGGER.fatal("Run failed.")
-        exit(1)
+    if args.discover:
+        do_discover(args)
+    else:
+        do_sync(args)
 
 
 if __name__ == '__main__':

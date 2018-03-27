@@ -23,22 +23,22 @@ class UsersStream(BaseStream):
             "country": {"type": ["string", "null"]},
             "region": {"type": ["string", "null"]},
             "city": {"type": ["string", "null"]},
-            "satisfaction_score": {"type": ["string", "null"]},
+            "satisfaction_score": {"type": ["integer", "null"]},
             "allowed_state": {"type": ["string", "null"]},
             "state": {"type": ["string", "null"]},
             "supported_suggestions_count": {"type": "integer"},
-            "is_admin": {"type": {"type": "boolean"}},
-            "is_owner": {"type": {"type": "boolean"}},
-            "email_confirmed": {"type": {"type": "boolean"}},
-            "status_notifications": {"type": {"type": "boolean"}},
-            "comment_notifications": {"type": {"type": "boolean"}},
+            "is_admin": {"type": "boolean"},
+            "is_owner": {"type": "boolean"},
+            "email_confirmed": {"type": "boolean"},
+            "status_notifications": {"type": "boolean"},
+            "comment_notifications": {"type": "boolean"},
             "links": {
                 "type": "object",
                 "properties": {
                     # todo: check these
                     "teams": {"type": ["array", "null"]},
-                    "current_nps_rating": {"type": ["array", "null"]},
-                    "previous_nps_rating": {"type": ["array", "null"]},
+                    "current_nps_rating": {"type": ["integer", "null"]},
+                    "previous_nps_rating": {"type": ["integer", "null"]},
                     "external_users": {"type": ["array", "null"]}
                 }
             }

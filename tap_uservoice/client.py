@@ -1,5 +1,6 @@
 import requests
 import singer
+import singer.metrics
 import time
 
 LOGGER = singer.get_logger()  # noqa
@@ -37,6 +38,7 @@ class UservoiceClient:
                    updated_after=None,
                    updated_before=None,
                    cursor=None,
+                   endpoint=None,
                    tries=0):
 
         if tries > self.MAX_TRIES:
@@ -55,20 +57,22 @@ class UservoiceClient:
         if cursor:
             request_data['cursor'] = cursor
 
-        print(request_data)
+        request_data['per_page'] = 100
 
-        response = requests.get(
-            url,
-            headers={
-                'Authorization': 'Bearer {}'.format(
-                    self.access_token)
-            },
-            params=request_data)
+        with singer.metrics.http_request_timer(endpoint):
+            response = requests.get(
+                url,
+                headers={
+                    'Authorization': 'Bearer {}'.format(
+                        self.access_token)
+                },
+                params=request_data)
 
         if response.status_code == 401:
             self.authorize()
             return self.fetch_data(
-                url, updated_after, updated_before, cursor, tries+1)
+                url, updated_after, updated_before, cursor, endpoint,
+                tries+1)
 
         elif response.status_code == 429:
             LOGGER.warn('Got a 429, sleeping 5 seconds '

@@ -1,5 +1,6 @@
 import pytz
 import singer
+import singer.metrics
 
 from datetime import timedelta, datetime
 from funcy import project
@@ -70,6 +71,7 @@ class BaseStream:
         return self.sync_data()
 
     def sync_data_for_date(self, date, interval):
+        LOGGER.info('Syncing data for {}'.format(date.isoformat()))
         table = self.TABLE
 
         updated_after = date
@@ -83,29 +85,42 @@ class BaseStream:
                 self.API_PATH)
 
             result = self.client.fetch_data(
-                url, updated_after, updated_before, cursor)
+                url, updated_after, updated_before, cursor,
+                endpoint=table)
 
             cursor = result.get('pagination', {}).get('cursor')
+            total_pages = result.get('pagination', {}).get('total_pages')
             data = self.get_stream_data(result)
-            has_data = (data is not None) and (len(data) > 0)
+            page = 1
+            has_data = ((data is not None) and (len(data) > 0))
 
             if has_data:
-                for obj in data:
-                    singer.write_records(
-                        table,
-                        self.filter_keys(obj))
+                with singer.metrics.record_counter(endpoint=table) \
+                     as counter:
+                    for obj in data:
+                        singer.write_records(
+                            table,
+                            [self.filter_keys(obj)])
 
-                    self.state = incorporate(self.state,
-                                             table,
-                                             'updated_at',
-                                             obj.get('updated_at'))
+                        counter.increment()
 
-                if cursor is None:
+                        self.state = incorporate(self.state,
+                                                 table,
+                                                 'updated_at',
+                                                 obj.get('updated_at'))
+
+                if page == total_pages:
+                    LOGGER.info('Reached end of stream, moving on.')
+                    has_data = False
+
+                elif cursor is None:
                     raise RuntimeError('Found data, but there is no '
                                        'continuation cursor!')
 
             else:
                 LOGGER.info('No data returned, moving on.')
+
+            page = page + 1
 
         save_state(self.state)
 

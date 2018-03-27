@@ -19,7 +19,7 @@ class RequestsStream(BaseStream):
             "source_type": {"type": ["string", "null"]},
             "source_guid": {"type": ["string", "null"]},
             "channel": {"type": ["string", "null"]},
-            "severity": {"type": ["string", "null"]},
+            "severity": {"type": ["integer", "null"]},
             "links": {
                 "type": "object",
                 "properties": {

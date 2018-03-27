@@ -5,8 +5,6 @@ LOGGER = singer.get_logger()  # noqa
 
 
 def is_selected(catalog_entry):
-    print(catalog_entry)
-
     default = catalog_entry.get('selected-by-default', False)
 
     return ((catalog_entry.get('inclusion') == 'automatic') or
