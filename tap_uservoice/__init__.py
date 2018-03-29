@@ -73,7 +73,8 @@ def do_sync(args):
 
         except Exception as e:
             LOGGER.error(str(e))
-            LOGGER.error('Failed to sync endpoint, moving on!')
+            LOGGER.error('Failed to sync endpoint {}, moving on!'
+                         .format(stream.TABLE))
 
     save_state(state)
 

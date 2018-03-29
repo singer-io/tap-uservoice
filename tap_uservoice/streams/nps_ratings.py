@@ -23,7 +23,7 @@ class NpsRatingsStream(BaseStream):
                 "type": "object",
                 "properties": {
                     "user": {"type": ["integer", "null"]},
-                    "ticket": {"type": ["string", "null"]}
+                    "ticket": {"type": ["integer", "null"]}
                 }
             }
         }))

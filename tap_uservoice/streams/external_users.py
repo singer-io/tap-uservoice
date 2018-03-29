@@ -28,7 +28,8 @@ class ExternalUsersStream(BaseStream):
             "name": {"type": ["string", "null"]},
             "seen_days": {"type": ["integer", "null"]},
             "type": {"type": ["string", "null"]},
-        }))
+        }),
+        additional=True)
 
     def get_stream_data(self, result):
         return result.get('external_users')

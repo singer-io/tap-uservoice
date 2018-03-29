@@ -78,6 +78,7 @@ class BaseStream:
         updated_before = updated_after + interval
         cursor = None
         has_data = True
+        page = 1
 
         while has_data:
             url = 'https://{}.uservoice.com{}'.format(
@@ -91,7 +92,6 @@ class BaseStream:
             cursor = result.get('pagination', {}).get('cursor')
             total_pages = result.get('pagination', {}).get('total_pages')
             data = self.get_stream_data(result)
-            page = 1
             has_data = ((data is not None) and (len(data) > 0))
 
             if has_data:
@@ -114,13 +114,21 @@ class BaseStream:
                     has_data = False
 
                 elif cursor is None:
-                    raise RuntimeError('Found data, but there is no '
-                                       'continuation cursor!')
+                    raise RuntimeError(('Found data, but there is no '
+                                        'continuation cursor! (Expected '
+                                        '{} pages, found {})').format(
+                                            total_pages,
+                                            page))
 
             else:
                 LOGGER.info('No data returned, moving on.')
 
             page = page + 1
+
+        self.state = incorporate(self.state,
+                                 table,
+                                 'updated_at',
+                                 date.isoformat())
 
         save_state(self.state)
 
@@ -132,9 +140,11 @@ class BaseStream:
         if date is None:
             date = get_config_start_date(self.config)
 
-        interval = timedelta(days=1)
+        interval = timedelta(days=7)
 
         while date < datetime.now(pytz.utc):
             self.sync_data_for_date(date, interval)
 
             date = date + interval
+
+        return self.state

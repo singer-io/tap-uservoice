@@ -55,7 +55,7 @@ class SuggestionsStream(BaseStream):
                     "labels": {"type": ["array", "null"]},
                     "last_status_update": {"type": ["integer", "null"]},
                     "parent_suggestion": {"type": ["integer", "null"]},
-                    "parent_suggestions": {"type": ["integer", "null"]},
+                    "parent_suggestions": {"type": ["array", "null"]},
                     "status": {"type": ["integer", "null"]},
                     "ticket": {"type": ["integer", "null"]}
                 }
