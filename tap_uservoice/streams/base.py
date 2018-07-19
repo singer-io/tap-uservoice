@@ -17,8 +17,6 @@ class BaseStream:
     # ABSTRACT PROPERTIES -- SHOULD BE OVERRIDDEN
     TABLE = None
     SCHEMA = None
-    replication_key = 'updated_at'
-    replication_method = 'INCREMENTAL'
 
     def get_stream_data(self, result):
         """
@@ -29,6 +27,8 @@ class BaseStream:
 
     # GLOBAL PROPERTIES -- DON'T OVERRIDE
     KEY_PROPERTIES = ['id']
+    REPLICATION_KEY = 'updated_at'
+    REPLICATION_METHOD = 'INCREMENTAL'
 
     def __init__(self, config, state, catalog, client):
         self.config = config
@@ -45,13 +45,13 @@ class BaseStream:
         mdata = metadata.new()
 
         mdata = metadata.write(mdata, (), 'table-key-properties', cls.KEY_PROPERTIES)
-        mdata = metadata.write(mdata, (), 'forced-replication-method', cls.replication_method)
+        mdata = metadata.write(mdata, (), 'forced-replication-method', cls.REPLICATION_KEY)
 
         if cls.replication_key:
-            mdata = metadata.write(mdata, (), 'valid-replication-keys', [cls.replication_key])
+            mdata = metadata.write(mdata, (), 'valid-replication-keys', [cls.REPLICATION_KEY])
 
         for field_name in schema['properties'].keys():
-            if field_name in cls.KEY_PROPERTIES or field_name == cls.replication_key:
+            if field_name in cls.KEY_PROPERTIES or field_name == cls.REPLICATION_KEY:
                 mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
             else:
                 mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'available')
@@ -119,11 +119,11 @@ class BaseStream:
                         singer.write_record(table, rec, time_extracted=extraction_time)
                         counter.increment()
 
-                        rec_updated_at = rec.get(self.replication_key)
+                        rec_updated_at = rec.get(self.REPLICATION_KEY)
                         if rec_updated_at:
                             self.state = incorporate(self.state,
                                                      table,
-                                                     self.replication_key,
+                                                     self.REPLICATION_KEY,
                                                      rec_updated_at)
 
                 if page == total_pages:
@@ -144,7 +144,7 @@ class BaseStream:
 
         self.state = incorporate(self.state,
                                  table,
-                                 self.replication_key,
+                                 self.REPLICATION_KEY,
                                  date.isoformat())
 
         save_state(self.state)
