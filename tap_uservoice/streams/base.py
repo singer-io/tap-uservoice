@@ -16,6 +16,8 @@ class BaseStream:
     # ABSTRACT PROPERTIES -- SHOULD BE OVERRIDDEN
     TABLE = None
     SCHEMA = None
+    replication_key = 'updated_at'
+    replication_method = 'INCREMENTAL'
 
     def get_stream_data(self, result):
         """
@@ -127,7 +129,7 @@ class BaseStream:
 
         self.state = incorporate(self.state,
                                  table,
-                                 'updated_at',
+                                 self.replication_key,
                                  date.isoformat())
 
         save_state(self.state)
