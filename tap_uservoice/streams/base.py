@@ -2,6 +2,8 @@ import pytz
 import singer
 import singer.metrics
 
+from singer import metadata
+from singer import Transformer
 from datetime import timedelta, datetime
 from funcy import project
 from tap_uservoice.config import get_config_start_date
@@ -39,6 +41,24 @@ class BaseStream:
     def matches_catalog(cls, catalog):
         return catalog.get('stream') == cls.TABLE
 
+    @classmethod
+    def load_metadata(cls, schema):
+        mdata = metadata.new()
+
+        mdata = metadata.write(mdata, (), 'table-key-properties', cls.KEY_PROPERTIES)
+        mdata = metadata.write(mdata, (), 'forced-replication-method', cls.replication_method)
+
+        if cls.replication_key:
+            mdata = metadata.write(mdata, (), 'valid-replication-keys', [cls.replication_key])
+
+        for field_name in schema['properties'].keys():
+            if field_name in cls.KEY_PROPERTIES or field_name == cls.replication_key:
+                mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
+            else:
+                mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'available')
+
+        return metadata.to_list(mdata)
+
     def generate_catalog(self):
         cls = self.__class__
 
@@ -47,7 +67,7 @@ class BaseStream:
             'stream': cls.TABLE,
             'key_properties': cls.KEY_PROPERTIES,
             'schema': cls.SCHEMA,
-            'replication_key': 'updated_at'
+            'metadata': cls.load_metadata(cls.SCHEMA)
         }]
 
     def get_catalog_keys(self):
