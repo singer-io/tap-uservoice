@@ -119,10 +119,12 @@ class BaseStream:
                         singer.write_record(table, rec, time_extracted=extraction_time)
                         counter.increment()
 
-                        self.state = incorporate(self.state,
-                                                 table,
-                                                 'updated_at',
-                                                 obj.get('updated_at'))
+                        rec_updated_at = rec.get(self.replication_key)
+                        if rec_updated_at:
+                            self.state = incorporate(self.state,
+                                                     table,
+                                                     self.replication_key,
+                                                     rec_updated_at)
 
                 if page == total_pages:
                     LOGGER.info('Reached end of stream, moving on.')
