@@ -5,7 +5,6 @@ import singer.metrics
 from singer import metadata
 from singer import Transformer
 from datetime import timedelta, datetime
-from funcy import project
 from tap_uservoice.config import get_config_start_date
 from tap_uservoice.state import incorporate, save_state, \
     get_last_record_value_for_table
@@ -70,13 +69,6 @@ class BaseStream:
             'metadata': cls.load_metadata(cls.SCHEMA)
         }]
 
-    def get_catalog_keys(self):
-        return list(
-            self.catalog.get('schema', {}).get('properties', {}).keys())
-
-    def filter_keys(self, obj):
-        return project(obj, self.get_catalog_keys())
-
     def write_schema(self):
         singer.write_schema(
             self.catalog.get('stream'),
@@ -102,6 +94,7 @@ class BaseStream:
         has_data = True
         page = 1
 
+        extraction_time = singer.utils.now()
         while has_data:
             url = 'https://{}.uservoice.com{}'.format(
                 self.config.get('subdomain'),
@@ -119,11 +112,11 @@ class BaseStream:
             if has_data:
                 with singer.metrics.record_counter(endpoint=table) \
                      as counter:
-                    for obj in data:
-                        singer.write_records(
-                            table,
-                            [self.filter_keys(obj)])
+                    for rec in data:
+                        with Transformer() as transformer:
+                            rec = transformer.transform(rec, self.catalog['schema'], metadata.to_map(self.catalog['metadata']))
 
+                        singer.write_record(table, rec, time_extracted=extraction_time)
                         counter.increment()
 
                         self.state = incorporate(self.state,
