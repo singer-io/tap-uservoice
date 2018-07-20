@@ -1,16 +1,22 @@
 import json
 import singer
+from singer import metadata
 
 LOGGER = singer.get_logger()  # noqa
 
 
-def is_selected(catalog_entry):
-    default = catalog_entry.get('selected-by-default', False)
+def is_selected(stream):
+    # try metadata first
+    mdata = metadata.to_map(stream.get('metadata'))
+    if mdata.get((), {}).get('selected', False):
+        return True
 
-    return ((catalog_entry.get('inclusion') == 'automatic') or
-            (catalog_entry.get('inclusion') == 'available' and
-             catalog_entry.get('selected', default) is True))
-
+    # fallback to legacy way
+    schema = stream.get('schema')
+    default = schema.get('selected-by-default', False)
+    return ((schema.get('inclusion') == 'automatic') or
+            (schema.get('inclusion') == 'available' and
+             schema.get('selected', default) is True))
 
 def load_catalog(filename):
     catalog = {}

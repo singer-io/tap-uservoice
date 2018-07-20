@@ -36,7 +36,7 @@ def get_streams_to_replicate(config, state, catalog, client):
     streams = []
 
     for stream_catalog in catalog.get('streams'):
-        if not is_selected(stream_catalog.get('schema', {})):
+        if not is_selected(stream_catalog):
             LOGGER.info("'{}' is not marked selected, skipping."
                         .format(stream_catalog.get('stream')))
             continue
@@ -56,7 +56,11 @@ def do_sync(args):
 
     config = load_config(args.config)
     state = load_state(args.state)
-    catalog = load_catalog(args.properties)
+    if args.properties:
+        catalog = load_catalog(args.properties)
+    elif args.catalog:
+        catalog = singer.Catalog.load(args.catalog)
+
     client = UservoiceClient(config)
     client.authorize()
 
@@ -92,6 +96,8 @@ def main():
         '-s', '--state', help='State file')
     parser.add_argument(
         '-p', '--properties', help='Catalog file with fields selected')
+    parser.add_argument(
+        '--catalog', help='Catalog file')
 
     parser.add_argument(
         '-d', '--discover',
@@ -107,7 +113,7 @@ def main():
 
     if args.discover:
         do_discover(args)
-    else:
+    elif args.properties or args.catalog:
         do_sync(args)
 
 
