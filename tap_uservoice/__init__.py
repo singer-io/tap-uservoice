@@ -36,7 +36,7 @@ def get_streams_to_replicate(config, state, catalog, client):
     streams = []
 
     for stream_catalog in catalog.get('streams'):
-        if not is_selected(stream_catalog.get('schema', {})):
+        if not is_selected(stream_catalog):
             LOGGER.info("'{}' is not marked selected, skipping."
                         .format(stream_catalog.get('stream')))
             continue
