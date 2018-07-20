@@ -75,9 +75,13 @@ class UservoiceClient:
                 tries+1)
 
         elif response.status_code == 429:
-            LOGGER.warn('Got a 429, sleeping 5 seconds '
+            sleep_time = 5
+            sleep_time_str = response.headers.get('Retry-After', None)
+            if sleep_time_str:
+                sleep_time = int(sleep_time_str)
+            LOGGER.warn('Got a 429, sleeping ' + str(sleep_time) + ' seconds '
                         'and then trying again.')
-            time.sleep(5)
+            time.sleep(sleep_time)
             return self.fetch_data(
                 url, updated_after, updated_before, cursor, tries+1)
 
