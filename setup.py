@@ -20,4 +20,4 @@ setup(name='tap-uservoice',
           [console_scripts]
           tap-uservoice=tap_uservoice:main
       ''',
-      packages=['tap_uservoice'])
+      packages=['tap_uservoice', 'tap_uservoice.streams'])
