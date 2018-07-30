@@ -52,10 +52,20 @@ class SuggestionsStream(BaseStream):
                     "category": {"type": ["integer", "null"]},
                     "created_by": {"type": ["integer", "null"]},
                     "forum": {"type": ["integer", "null"]},
-                    "labels": {"type": ["array", "null"]},
+                    "labels": {
+                        "type": ["array", "null"],
+                        "items": {
+                            "type": ["integer", "null"]
+                        }
+                    },
                     "last_status_update": {"type": ["integer", "null"]},
                     "parent_suggestion": {"type": ["integer", "null"]},
-                    "parent_suggestions": {"type": ["array", "null"]},
+                    "parent_suggestions": {
+                        "type": ["array", "null"],
+                        "items": {
+                            "type": ["integer", "null"]
+                        }
+                    },
                     "status": {"type": ["integer", "null"]},
                     "ticket": {"type": ["integer", "null"]}
                 }

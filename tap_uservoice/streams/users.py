@@ -36,10 +36,20 @@ class UsersStream(BaseStream):
                 "type": "object",
                 "properties": {
                     # todo: check these
-                    "teams": {"type": ["array", "null"]},
+                    "teams": {
+                        "type": ["array", "null"],
+                        "items": {
+                            "type": ["integer", "null"]
+                        }
+                    },
                     "current_nps_rating": {"type": ["integer", "null"]},
                     "previous_nps_rating": {"type": ["integer", "null"]},
-                    "external_users": {"type": ["array", "null"]}
+                    "external_users": {
+                        "type": ["array", "null"],
+                        "items": {
+                            "type": ["integer", "null"]
+                        }
+                    }
                 }
             }
         }))
