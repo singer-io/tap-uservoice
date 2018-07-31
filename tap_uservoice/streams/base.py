@@ -1,10 +1,10 @@
+from datetime import timedelta, datetime
 import pytz
 import singer
 import singer.metrics
 
 from singer import metadata
 from singer import Transformer
-from datetime import timedelta, datetime
 from tap_uservoice.config import get_config_start_date
 from tap_uservoice.state import incorporate, save_state, \
     get_last_record_value_for_table

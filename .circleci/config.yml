@@ -12,7 +12,7 @@ jobs:
             source ~/.virtualenvs/tap-uservoice/bin/activate
             pip install .
             pip install pylint
-            pylint tap_uservoice -d missing-docstring,invalid-name,line-too-long,too-many-locals,too-few-public-methods,fixme,stop-iteration-return,too-many-branches,useless-import-alias,no-else-return
+            pylint tap_uservoice -d missing-docstring,invalid-name,line-too-long,too-many-locals,too-few-public-methods,fixme,stop-iteration-return,too-many-branches,useless-import-alias,no-else-return,logging-format-interpolation,broad-except,attribute-defined-outside-init,too-many-arguments,invalid-all-object,unused-argument,no-self-use,no-member,assignment-from-no-return,len-as-condition,duplicate-code
       - run:
           name: 'Unit Tests'
           command: |

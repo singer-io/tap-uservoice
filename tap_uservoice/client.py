@@ -1,7 +1,7 @@
+import time
 import requests
 import singer
 import singer.metrics
-import time
 
 LOGGER = singer.get_logger()  # noqa
 
@@ -79,8 +79,8 @@ class UservoiceClient:
             sleep_time_str = response.headers.get('Retry-After', None)
             if sleep_time_str:
                 sleep_time = int(sleep_time_str)
-            LOGGER.warn('Got a 429, sleeping ' + str(sleep_time) + ' seconds '
-                        'and then trying again.')
+            LOGGER.warning('Got a 429, sleeping {} seconds '
+                           'and then trying again.'.format(str(sleep_time)))
             time.sleep(sleep_time)
             return self.fetch_data(
                 url, updated_after, updated_before, cursor, tries+1)

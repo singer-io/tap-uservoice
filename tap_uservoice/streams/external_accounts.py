@@ -28,7 +28,7 @@ class ExternalAccountsStream(BaseStream):
             "supported_ideas_count": {"type": ["integer", "null"]},
             "users_count": {"type": ["integer", "null"]},
         }),
-        additional=True)
+                             additional=True)
 
     def get_stream_data(self, result):
         return result.get('external_accounts')
