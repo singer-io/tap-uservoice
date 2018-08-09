@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.1
+  * Rename `client_id` to `api_key` and `client_secret` to `api_secret`
+
 ## 0.1.0
   * Add features and external_users streams
 
