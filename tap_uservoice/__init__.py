@@ -86,7 +86,7 @@ def do_sync(args):
 @singer.utils.handle_top_exception(LOGGER)
 def main():
     args = singer.utils.parse_args(
-        required_config_keys=['client_id', 'client_secret', 'subdomain'])
+        required_config_keys=['api_key', 'api_secret', 'subdomain'])
 
     parser = argparse.ArgumentParser()
 

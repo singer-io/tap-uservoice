@@ -21,8 +21,8 @@ class UservoiceClient:
 
         data = {
             'grant_type': 'client_credentials',
-            'client_id': self.config.get('client_id'),
-            'client_secret': self.config.get('client_secret'),
+            'client_id': self.config.get('api_key'),
+            'client_secret': self.config.get('api_secret'),
         }
 
         response = requests.post(url, data=data)

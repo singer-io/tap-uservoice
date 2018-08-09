@@ -41,7 +41,7 @@ pip install .
 2. Get credentials from Uservoice. You'll need your:
 
 - Uservoice subdomain,
-- and a client ID and secret. See Uservoice's [instructions on how to generate these](https://developer.uservoice.com/docs/api/v2/getting-started/).
+- and a API Key and Secret. See Uservoice's [instructions on how to generate these](https://developer.uservoice.com/docs/api/v2/getting-started/).
 
 3. Create the config file.
 
