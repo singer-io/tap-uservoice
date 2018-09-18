@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.0
+  * Releasing
+
 ## 0.1.1
   * Rename `client_id` to `api_key` and `client_secret` to `api_secret`
 
