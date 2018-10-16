@@ -17,7 +17,7 @@ class SuggestionsStream(BaseStream):
         {
             "admin_url": {"type": "string"},
             "average_engagement": {"type": "number"},
-            "body": {"type": "string"},
+            "body": {"type": ["string", "null"]},
             "body_mime_type": {"type": "string"},
             "channel": {"type": "string"},
             "comments_count": {"type": "integer"},
