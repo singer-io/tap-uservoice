@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.1
+  * Adding "null" to acceptable types for `body` field in `suggestions` stream [#3](https://github.com/singer-io/tap-uservoice/pull/3)
+
 ## 1.0.0
   * Releasing
 

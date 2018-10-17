@@ -4,7 +4,7 @@ from setuptools import setup
 
 
 setup(name='tap-uservoice',
-      version='1.0.0',
+      version='1.0.1',
       description='Singer.io tap for extracting data from the Uservoice API',
       author='Fishtown Analytics',
       url='http://fishtownanalytics.com',
