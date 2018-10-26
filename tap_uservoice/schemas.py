@@ -5,7 +5,6 @@ def with_properties(properties, additional=False):
     return {
         'type': 'object',
         'inclusion': 'available',
-        'selected-by-default': False,
         'properties': properties,
         'additionalProperties': additional
     }
