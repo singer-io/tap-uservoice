@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.0.2
-  * Update version of `requests` to `0.20.0` in response to CVE 2018-18074
+  * Update version of `requests` to `2.20.0` in response to CVE 2018-18074
 
 ## 1.0.1
   * Adding "null" to acceptable types for `body` field in `suggestions` stream [#3](https://github.com/singer-io/tap-uservoice/pull/3)
