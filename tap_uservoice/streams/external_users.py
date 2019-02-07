@@ -21,8 +21,8 @@ class ExternalUsersStream(BaseStream):
             "links": {
                 "type": "object",
                 "properties": {
-                    "external_accounts": {"type": ["integer", "null"]},
-                    "external_users": {"type": ["integer", "null"]},
+                    "external_account": {"type": ["integer", "null"]},
+                    "user": {"type": ["integer", "null"]},
                 },
             },
             "name": {"type": ["string", "null"]},
