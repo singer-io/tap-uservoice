@@ -8,15 +8,15 @@ jobs:
       - run:
           name: 'Setup virtual env'
           command: |
-            virtualenv -p python3 ~/.virtualenvs/tap-uservoice
-            source ~/.virtualenvs/tap-uservoice/bin/activate
+            virtualenv -p python3 /usr/local/share/virtualenvs/tap-uservoice
+            source /usr/local/share/virtualenvs/tap-uservoice/bin/activate
             pip install .
             pip install pylint
             pylint tap_uservoice -d missing-docstring,invalid-name,line-too-long,too-many-locals,too-few-public-methods,fixme,stop-iteration-return,too-many-branches,useless-import-alias,no-else-return,logging-format-interpolation,broad-except,attribute-defined-outside-init,too-many-arguments,invalid-all-object,unused-argument,no-self-use,no-member,assignment-from-no-return,len-as-condition,duplicate-code
       - run:
           name: 'Unit Tests'
           command: |
-            source ~/.virtualenvs/tap-uservoice/bin/activate
+            source /usr/local/share/virtualenvs/tap-uservoice/bin/activate
             pip install nose
             nosetests
       - add_ssh_keys
@@ -25,7 +25,7 @@ jobs:
           command: |
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/sandbox dev_env.sh
             source dev_env.sh
-            source ~/.virtualenvs/tap-tester/bin/activate
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
             run-a-test --tap=tap-uservoice \
                        --target=target-stitch \
                        --orchestrator=stitch-orchestrator \
