@@ -35,6 +35,7 @@ jobs:
                        tap_tester.suites.uservoice
 
 workflows:
+  version: 2
   commit:
     jobs:
       - build:
