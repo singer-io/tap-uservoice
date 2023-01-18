@@ -33,3 +33,10 @@ jobs:
                        --password=$SANDBOX_PASSWORD \
                        --client-id=50 \
                        tap_tester.suites.uservoice
+
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - build:
+          context: circleci-user
