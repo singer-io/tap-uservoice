@@ -13,7 +13,7 @@ setup(name='tap-uservoice',
       install_requires=[
           'singer-python==5.3.1',
           'backoff==1.3.2',
-          'requests==2.20.0',
+          'requests==2.31.0',
           'funcy==1.10.1',
       ],
       entry_points='''
