@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.4
+  * Dependabot update [#8](https://github.com/singer-io/tap-uservoice/pull/8)
+
 ## 1.0.3
   * Fix properties on external_users stream
 
