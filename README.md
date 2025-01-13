@@ -33,7 +33,7 @@ It:
 1. Install
 
 ```bash
-git clone git@github.com:fishtown-analytics/tap-uservoice.git
+git clone git@github.com:singer-io/tap-uservoice.git
 cd tap-uservoice
 pip install .
 ```
