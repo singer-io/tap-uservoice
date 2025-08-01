@@ -56,6 +56,7 @@ def do_sync(args):
 
     config = load_config(args.config)
     state = load_state(args.state)
+    catalog = None
     if args.properties:
         catalog = load_catalog(args.properties)
     elif args.catalog:
