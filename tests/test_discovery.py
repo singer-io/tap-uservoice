@@ -11,8 +11,3 @@ class TapUservoiceDiscoveryTest(DiscoveryTest, TapUservoiceBaseCase):
 
     def streams_to_test(self):
         return self.expected_stream_names()
-
-    # @unittest.expectedFailure
-    # def test_replication_metadata(self):
-    #     """This test will fail until forced-replication-key is added to stream metadata"""
-    #     super().test_replication_metadata()

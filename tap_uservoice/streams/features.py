@@ -14,7 +14,6 @@ class FeaturesStream(BaseStream):
         {
             "id": {"type": ["integer", "null"]},
             "description": {"type": ["string", "null"]},
-            "is_blocker": {"type": ["boolean", "null"]},
             "links": {
                 "type": "object",
                 "properties": {

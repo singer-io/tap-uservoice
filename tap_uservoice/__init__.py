@@ -60,7 +60,7 @@ def do_sync(args):
     if args.properties:
         catalog = load_catalog(args.properties)
     elif args.catalog:
-        catalog = singer.Catalog.load(args.catalog)
+        catalog = singer.Catalog.load(args.catalog).to_dict()
 
     client = UservoiceClient(config)
     client.authorize()

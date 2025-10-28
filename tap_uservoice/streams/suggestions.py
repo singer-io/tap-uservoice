@@ -11,7 +11,6 @@ class SuggestionsStream(BaseStream):
     TABLE = 'suggestions'
     SCHEMA = with_properties(merge(
         DEFAULT_DATE_FIELDS,
-        make_date_field('approved_at'),
         make_date_field('closed_at'),
         make_date_field('first_support_at'),
         {
@@ -30,7 +29,6 @@ class SuggestionsStream(BaseStream):
             "engagement_trend": {"type": "number"},
             "id": {"type": "integer"},
             "inappropriate_flags_count": {"type": "integer"},
-            "is_blocker": {"type": ["boolean", "null"]},
             "notes_count": {"type": "integer"},
             "portal_url": {"type": "string"},
             "recent_engagement": {"type": "integer"},
@@ -44,7 +42,6 @@ class SuggestionsStream(BaseStream):
             "supporters_count": {"type": "integer"},
             "supporting_accounts_count": {"type": "integer"},
             "title": {"type": "string"},
-            "votes_count": {"type": "integer"},
             "links": {
                 "type": "object",
                 "additionalProperties": True,

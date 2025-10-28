@@ -16,7 +16,6 @@ class ExternalAccountsStream(BaseStream):
         {
             "external_id": {"type": ["string", "null"]},
             "id": {"type": ["integer", "null"]},
-            "is_blocker": {"type": ["boolean", "null"]},
             "ltv": {"type": ["number", "null"]},
             "ltv_cents": {"type": ["integer", "null"]},
             "mrr": {"type": ["number", "null"]},

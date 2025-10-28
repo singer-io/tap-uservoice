@@ -17,7 +17,6 @@ class ForumsStream(BaseStream):
             "welcome_message": {"type": ["string", "null"]},
             "welcome_message_mime_type": {"type": ["string", "null"]},
             "prompt": {"type": ["string", "null"]},
-            "example": {"type": ["string", "null"]},
             "portal_url": {"type": ["string", "null"]},
             "open_suggestions_count": {"type": ["integer", "null"]},
             "suggestions_count": {"type": ["integer", "null"]},
