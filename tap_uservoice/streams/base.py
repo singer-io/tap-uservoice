@@ -44,10 +44,15 @@ class BaseStream:
     def load_metadata(cls, schema):
         mdata = metadata.new()
 
-        mdata = metadata.write(mdata, (), 'table-key-properties', cls.KEY_PROPERTIES)
-        mdata = metadata.write(mdata, (), 'forced-replication-method', cls.REPLICATION_KEY)
+        has_replication_key = schema['properties'].get(cls.REPLICATION_KEY) is not None
 
-        if cls.REPLICATION_KEY:
+        mdata = metadata.write(mdata, (), 'table-key-properties', cls.KEY_PROPERTIES)
+        if has_replication_key:
+            mdata = metadata.write(mdata, (), 'forced-replication-method', cls.REPLICATION_METHOD)
+        else:
+            mdata = metadata.write(mdata, (), 'forced-replication-method', 'FULL_TABLE')
+
+        if has_replication_key:
             mdata = metadata.write(mdata, (), 'valid-replication-keys', [cls.REPLICATION_KEY])
 
         for field_name in schema['properties'].keys():
