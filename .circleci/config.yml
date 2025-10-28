@@ -17,20 +17,14 @@ jobs:
             source /usr/local/share/virtualenvs/tap-uservoice/bin/activate
             uv pip install pylint
             pylint tap_uservoice -d missing-docstring,invalid-name,line-too-long,too-many-locals,too-few-public-methods,fixme,stop-iteration-return,too-many-branches,useless-import-alias,no-else-return,logging-format-interpolation,broad-except,attribute-defined-outside-init,too-many-arguments,invalid-all-object,unused-argument,no-member,assignment-from-no-return,len-as-condition,duplicate-code,consider-using-f-string,consider-using-sys-exit,unspecified-encoding,raise-missing-from,missing-timeout,too-many-positional-arguments
-      # These integrations tests live in tap-tester and it isn't obvious how they are supposed to be run
-      # - run:
-      #     name: 'Integration Tests'
-      #     command: |
-      #       aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/sandbox dev_env.sh
-      #       source dev_env.sh
-      #       source /usr/local/share/virtualenvs/tap-tester/bin/activate
-      #       run-a-test --tap=tap-uservoice \
-      #                  --target=target-stitch \
-      #                  --orchestrator=stitch-orchestrator \
-      #                  --email=harrison+sandboxtest@stitchdata.com \
-      #                  --password=$SANDBOX_PASSWORD \
-      #                  --client-id=50 \
-      #                  tap_tester.suites.uservoice
+      - run:
+          name: 'Integration Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            uv pip install --upgrade awscli
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
+            source dev_env.sh
+            run-test --tap=tap-uservoice tests
 
 workflows:
   version: 2
