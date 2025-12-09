@@ -11,9 +11,9 @@ setup(name='tap-uservoice',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_uservoice'],
       install_requires=[
-          'singer-python==5.3.1',
-          'backoff==1.3.2',
-          'requests==2.31.0',
+          'singer-python==5.14.3',
+          'backoff==1.10.0',
+          'requests==2.32.5',
           'funcy==1.10.1',
       ],
       entry_points='''
