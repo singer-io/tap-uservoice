@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.5
+  * Bump dependencies [#14](https://github.com/singer-io/tap-uservoice/pull/14)
+
 ## 1.0.4
   * Dependabot update [#8](https://github.com/singer-io/tap-uservoice/pull/8)
 
