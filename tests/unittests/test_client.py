@@ -124,7 +124,8 @@ class TestFetchData(unittest.TestCase):
     @patch('tap_uservoice.client.time.sleep')
     @patch('tap_uservoice.client.requests.get')
     def test_429_rate_limit_retries(self, mock_get, mock_sleep):
-        """Test that 429 status triggers retry with sleep."""
+        """Test that 429 status triggers retry with sleep and preserves
+        the endpoint argument on the recursive call."""
         client = self._make_client()
         mock_get.side_effect = [
             MockResponse(429, headers={'Retry-After': '2'}),
@@ -136,6 +137,12 @@ class TestFetchData(unittest.TestCase):
         self.assertEqual(result, {'data': 'ok'})
         mock_sleep.assert_called_once_with(2)
         self.assertEqual(mock_get.call_count, 2)
+
+        # Verify the retry call incremented tries and preserved endpoint
+        second_call = mock_get.call_args_list[1]
+        second_params = second_call[1]['params']
+        # per_page should still be present on the retry request
+        self.assertEqual(second_params['per_page'], 100)
 
     @patch('tap_uservoice.client.requests.post')
     @patch('tap_uservoice.client.requests.get')

@@ -14,9 +14,9 @@ setup(name='tap-uservoice',
           'singer-python==6.8.0',
           'backoff==2.2.1',
           'requests==2.32.5',
-          'funcy==1.10.1',
           'pytz',
           'python-dateutil',
+          'funcy==2.0',
       ],
       extras_require={
           'dev': [

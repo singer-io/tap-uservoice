@@ -81,7 +81,7 @@ class MockDataGenerator:
         ]
 
     @staticmethod
-    def wrap_paginated(records, cursor=None, total_pages=1):
+    def wrap_paginated(records, table_name, cursor=None, total_pages=1):
         """Wrap *records* in a Uservoice-style paginated response.
 
         Matches the format::
@@ -89,6 +89,7 @@ class MockDataGenerator:
             {<table>: [...], pagination: {cursor: ..., total_pages: N}}
         """
         return {
+            table_name: records,
             "pagination": {
                 "cursor": cursor,
                 "total_pages": total_pages,
