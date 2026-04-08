@@ -3,7 +3,6 @@
 Generates mock API response data from inline schema definitions with
 deterministic, type-conformant values.
 """
-import copy
 from datetime import datetime, timedelta
 
 
