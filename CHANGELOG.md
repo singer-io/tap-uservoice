@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0
+- Updated python version. [#15](https://github.com/singer-io/tap-uservoice/pull/15)
+- Added integration tests.
+
 ## 1.0.5
   * Bump dependencies [#14](https://github.com/singer-io/tap-uservoice/pull/14)
 
