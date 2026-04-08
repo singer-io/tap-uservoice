@@ -138,11 +138,47 @@ class TestFetchData(unittest.TestCase):
         mock_sleep.assert_called_once_with(2)
         self.assertEqual(mock_get.call_count, 2)
 
-        # Verify the retry call incremented tries and preserved endpoint
+        # Verify the retry call preserved per_page on the retry request
         second_call = mock_get.call_args_list[1]
         second_params = second_call[1]['params']
-        # per_page should still be present on the retry request
         self.assertEqual(second_params['per_page'], 100)
+
+    @patch('singer.metrics.http_request_timer')
+    @patch('tap_uservoice.client.time.sleep')
+    @patch('tap_uservoice.client.requests.get')
+    def test_429_retry_preserves_endpoint(self, mock_get, mock_sleep,
+                                          mock_timer):
+        """Test that 429 retry passes the same endpoint to metrics timer."""
+        mock_timer.return_value.__enter__ = MagicMock()
+        mock_timer.return_value.__exit__ = MagicMock(return_value=False)
+        client = self._make_client()
+        mock_get.side_effect = [
+            MockResponse(429, headers={'Retry-After': '1'}),
+            MockResponse(200, {'data': 'ok'}),
+        ]
+        client.fetch_data(
+            'https://test.uservoice.com/api/v2/admin/categories',
+            endpoint='categories')
+        # Both the original and retry call must use the same endpoint
+        self.assertEqual(mock_timer.call_count, 2)
+        for call in mock_timer.call_args_list:
+            self.assertEqual(call[0][0], 'categories')
+
+    @patch('tap_uservoice.client.time.sleep')
+    @patch('tap_uservoice.client.requests.get')
+    def test_429_retry_increments_tries(self, mock_get, mock_sleep):
+        """Test that repeated 429s increment tries and eventually raise."""
+        client = self._make_client()
+        # MAX_TRIES is 5; fetch_data raises when tries > MAX_TRIES (i.e. after 6+1=7 calls)
+        mock_get.return_value = MockResponse(
+            429, headers={'Retry-After': '0'})
+        with self.assertRaises(RuntimeError) as ctx:
+            client.fetch_data(
+                'https://test.uservoice.com/api/v2/admin/categories',
+                endpoint='categories')
+        self.assertIn('too many times', str(ctx.exception))
+        # Should have been called once for the initial + MAX_TRIES retries
+        self.assertEqual(mock_get.call_count, client.MAX_TRIES + 1)
 
     @patch('tap_uservoice.client.requests.post')
     @patch('tap_uservoice.client.requests.get')
