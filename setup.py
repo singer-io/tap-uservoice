@@ -15,6 +15,8 @@ setup(name='tap-uservoice',
           'backoff==2.2.1',
           'requests==2.32.5',
           'funcy==1.10.1',
+          'pytz',
+          'python-dateutil',
       ],
       extras_require={
           'dev': [
