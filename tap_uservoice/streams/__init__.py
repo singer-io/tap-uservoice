@@ -19,7 +19,7 @@ from tap_uservoice.streams.supporters import SupportersStream
 from tap_uservoice.streams.teams import TeamsStream
 from tap_uservoice.streams.users import UsersStream
 
-__all__ = AVAILABLE_STREAMS = [
+AVAILABLE_STREAMS = [
     CategoriesStream,
     CommentsStream,
     ExternalAccountsStream,
@@ -39,4 +39,27 @@ __all__ = AVAILABLE_STREAMS = [
     SupportersStream,
     TeamsStream,
     UsersStream,
+]
+
+__all__ = [
+    'CategoriesStream',
+    'CommentsStream',
+    'ExternalAccountsStream',
+    'ExternalUsersStream',
+    'FeatureStatusesStream',
+    'FeaturesStream',
+    'ForumsStream',
+    'LabelsStream',
+    'NpsRatingsStream',
+    'ProductAreasStream',
+    'RequestsStream',
+    'SegmentedValuesStream',
+    'SegmentsStream',
+    'StatusUpdatesStream',
+    'StatusesStream',
+    'SuggestionsStream',
+    'SupportersStream',
+    'TeamsStream',
+    'UsersStream',
+    'AVAILABLE_STREAMS',
 ]

@@ -17,6 +17,7 @@ class BaseStream:
     # ABSTRACT PROPERTIES -- SHOULD BE OVERRIDDEN
     TABLE = None
     SCHEMA = None
+    API_PATH = None
 
     def get_stream_data(self, result):
         """
