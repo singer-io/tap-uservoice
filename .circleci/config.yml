@@ -21,7 +21,6 @@ jobs:
           name: "Unit Tests"
           command: |
             source /usr/local/share/virtualenvs/tap-uservoice/bin/activate
-            uv pip install pytest coverage
             mkdir -p test_output
             coverage run -m pytest tests/unittests --junitxml=test_output/report.xml
             coverage report
