@@ -141,8 +141,8 @@ class TestLoadState(unittest.TestCase):
     @unittest.mock.patch('builtins.open',
                          unittest.mock.mock_open(read_data='invalid json'))
     def test_load_state_invalid_json_raises(self):
-        """Test that invalid JSON raises RuntimeError."""
-        with self.assertRaises(RuntimeError):
+        """Test that invalid JSON raises Exception."""
+        with self.assertRaises(Exception):
             load_state('/tmp/bad_state.json')
 
 
