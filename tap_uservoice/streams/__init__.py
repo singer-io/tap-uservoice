@@ -40,26 +40,3 @@ AVAILABLE_STREAMS = [
     TeamsStream,
     UsersStream,
 ]
-
-__all__ = [
-    'CategoriesStream',
-    'CommentsStream',
-    'ExternalAccountsStream',
-    'ExternalUsersStream',
-    'FeatureStatusesStream',
-    'FeaturesStream',
-    'ForumsStream',
-    'LabelsStream',
-    'NpsRatingsStream',
-    'ProductAreasStream',
-    'RequestsStream',
-    'SegmentedValuesStream',
-    'SegmentsStream',
-    'StatusUpdatesStream',
-    'StatusesStream',
-    'SuggestionsStream',
-    'SupportersStream',
-    'TeamsStream',
-    'UsersStream',
-    'AVAILABLE_STREAMS',
-]

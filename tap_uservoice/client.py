@@ -71,8 +71,13 @@ class UservoiceClient:
         if response.status_code == 401:
             self.authorize()
             return self.fetch_data(
-                url, updated_after, updated_before, cursor, endpoint,
-                tries+1)
+                url=url,
+                updated_after=updated_after,
+                updated_before=updated_before,
+                cursor=cursor,
+                endpoint=endpoint,
+                tries=tries+1
+            )
 
         elif response.status_code == 429:
             sleep_time = 5
@@ -83,8 +88,13 @@ class UservoiceClient:
                            'and then trying again.'.format(str(sleep_time)))
             time.sleep(sleep_time)
             return self.fetch_data(
-                url, updated_after, updated_before, cursor, endpoint,
-                tries+1)
+                url=url,
+                updated_after=updated_after,
+                updated_before=updated_before,
+                cursor=cursor,
+                endpoint=endpoint,
+                tries=tries+1
+            )
 
         elif response.status_code != 200:
             LOGGER.error(response.text)
