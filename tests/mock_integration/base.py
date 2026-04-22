@@ -15,10 +15,9 @@ tap-tester dependency required.
 """
 import copy
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
-import pytz
 from singer import metadata
 
 import tap_uservoice
@@ -207,7 +206,7 @@ class UservoiceMockBaseTest:
                 stream_cls = STREAM_CLASS_MAP[stream_name]
                 # If updated_after is recent, return "recent" data
                 base_date_aware = MockDataGenerator.BASE_DATE.replace(
-                    tzinfo=pytz.UTC)
+                    tzinfo=timezone.utc)
                 if updated_after and updated_after > base_date_aware:
                     records = MockDataGenerator.generate_records(
                         stream_cls, 1, base_seed=RECENT_DATA_SEED)

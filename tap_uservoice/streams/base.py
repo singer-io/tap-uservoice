@@ -1,5 +1,4 @@
-from datetime import timedelta, datetime
-import pytz
+from datetime import timedelta, datetime, timezone
 import singer
 import singer.metrics
 
@@ -160,7 +159,7 @@ class BaseStream:
 
         interval = timedelta(days=7)
 
-        while date < datetime.now(pytz.utc):
+        while date < datetime.now(timezone.utc):
             self.sync_data_for_date(date, interval)
 
             date = date + interval

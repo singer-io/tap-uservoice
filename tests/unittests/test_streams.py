@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
-import pytz
+from datetime import datetime, timedelta, timezone
 
 from tap_uservoice.streams.base import BaseStream
 from tap_uservoice.streams.categories import CategoriesStream
@@ -130,7 +129,7 @@ class TestBaseStreamSync(unittest.TestCase):
     def test_sync_data_writes_records(self, mock_start_date, mock_write_schema,
                                        mock_write_record, mock_save_state):
         """Test that sync_data calls write_record for each data item."""
-        mock_start_date.return_value = datetime.now(pytz.utc) - timedelta(days=1)
+        mock_start_date.return_value = datetime.now(timezone.utc) - timedelta(days=1)
 
         client = _make_mock_client()
         client.fetch_data.return_value = {
@@ -158,7 +157,7 @@ class TestBaseStreamSync(unittest.TestCase):
     def test_sync_incorporates_bookmark(self, mock_start_date, mock_write_schema,
                                          mock_write_record, mock_save_state):
         """Test that sync updates bookmark state."""
-        mock_start_date.return_value = datetime.now(pytz.utc) - timedelta(days=1)
+        mock_start_date.return_value = datetime.now(timezone.utc) - timedelta(days=1)
 
         client = _make_mock_client()
         client.fetch_data.return_value = {
@@ -187,7 +186,7 @@ class TestBaseStreamSync(unittest.TestCase):
     def test_sync_no_data_moves_on(self, mock_start_date, mock_write_schema,
                                     mock_write_record, mock_save_state):
         """Test that sync handles empty data gracefully."""
-        mock_start_date.return_value = datetime.now(pytz.utc) - timedelta(days=1)
+        mock_start_date.return_value = datetime.now(timezone.utc) - timedelta(days=1)
 
         client = _make_mock_client()
         client.fetch_data.return_value = {
