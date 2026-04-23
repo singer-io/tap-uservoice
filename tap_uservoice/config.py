@@ -30,7 +30,9 @@ def validate_config(config):
         has_errors = True
 
     if has_errors:
-        raise RuntimeError
+        raise RuntimeError(
+            'Invalid config: missing keys={}, null keys={}'.format(
+                missing_keys, null_keys))
 
 
 def load_config(filename):
@@ -39,9 +41,14 @@ def load_config(filename):
     try:
         with open(filename) as handle:
             config = json.load(handle)
-    except Exception:
+    except json.JSONDecodeError as e:
         LOGGER.fatal("Failed to decode config file. Is it valid json?")
-        raise RuntimeError
+        raise RuntimeError(
+            f'Config file is not valid JSON: {filename}') from e
+    except IOError as e:
+        LOGGER.fatal("Failed to read config file '%s'", filename)
+        raise RuntimeError(
+            f'Cannot read config file: {filename}') from e
 
     validate_config(config)
 

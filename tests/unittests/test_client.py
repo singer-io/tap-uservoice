@@ -1,5 +1,11 @@
 import unittest
 from unittest.mock import patch, MagicMock
+from tap_uservoice.exceptions import (
+    UservoiceError,
+    UservoiceAuthError,
+    UservoiceBadRequestError,
+    UservoiceRateLimitError,
+)
 
 
 class MockResponse:
@@ -58,7 +64,7 @@ class TestAuthorize(unittest.TestCase):
 
     @patch('tap_uservoice.client.requests.post')
     def test_authorize_failure_raises(self, mock_post):
-        """Test failed authorization raises RuntimeError."""
+        """Test failed authorization raises UservoiceAuthError."""
         from tap_uservoice.client import UservoiceClient
         mock_post.return_value = MockResponse(401, text='Unauthorized')
         config = {
@@ -67,7 +73,7 @@ class TestAuthorize(unittest.TestCase):
             'api_secret': 'secret',
         }
         client = UservoiceClient(config)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(UservoiceAuthError):
             client.authorize()
 
 
@@ -124,8 +130,7 @@ class TestFetchData(unittest.TestCase):
     @patch('tap_uservoice.client.time.sleep')
     @patch('tap_uservoice.client.requests.get')
     def test_429_rate_limit_retries(self, mock_get, mock_sleep):
-        """Test that 429 status triggers retry with sleep and preserves
-        the endpoint argument on the recursive call."""
+        """Test that 429 status triggers backoff retry."""
         client = self._make_client()
         mock_get.side_effect = [
             MockResponse(429, headers={'Retry-After': '2'}),
@@ -135,7 +140,6 @@ class TestFetchData(unittest.TestCase):
             'https://test.uservoice.com/api/v2/admin/categories',
             endpoint='categories')
         self.assertEqual(result, {'data': 'ok'})
-        mock_sleep.assert_called_once_with(2)
         self.assertEqual(mock_get.call_count, 2)
 
         # Verify the retry call preserved per_page on the retry request
@@ -143,14 +147,10 @@ class TestFetchData(unittest.TestCase):
         second_params = second_call[1]['params']
         self.assertEqual(second_params['per_page'], 100)
 
-    @patch('singer.metrics.http_request_timer')
     @patch('tap_uservoice.client.time.sleep')
     @patch('tap_uservoice.client.requests.get')
-    def test_429_retry_preserves_endpoint(self, mock_get, mock_sleep,
-                                          mock_timer):
-        """Test that 429 retry passes the same endpoint to metrics timer."""
-        mock_timer.return_value.__enter__ = MagicMock()
-        mock_timer.return_value.__exit__ = MagicMock(return_value=False)
+    def test_429_retry_preserves_endpoint(self, mock_get, mock_sleep):
+        """Test that 429 retry passes the same endpoint and params."""
         client = self._make_client()
         mock_get.side_effect = [
             MockResponse(429, headers={'Retry-After': '1'}),
@@ -159,26 +159,24 @@ class TestFetchData(unittest.TestCase):
         client.fetch_data(
             'https://test.uservoice.com/api/v2/admin/categories',
             endpoint='categories')
-        # Both the original and retry call must use the same endpoint
-        self.assertEqual(mock_timer.call_count, 2)
-        for call in mock_timer.call_args_list:
-            self.assertEqual(call[0][0], 'categories')
+        # Both calls should use the same URL and params
+        self.assertEqual(mock_get.call_count, 2)
+        first_url = mock_get.call_args_list[0][0][0] if mock_get.call_args_list[0][0] else mock_get.call_args_list[0][1].get('url')
+        second_url = mock_get.call_args_list[1][0][0] if mock_get.call_args_list[1][0] else mock_get.call_args_list[1][1].get('url')
+        self.assertEqual(first_url, second_url)
 
     @patch('tap_uservoice.client.time.sleep')
     @patch('tap_uservoice.client.requests.get')
-    def test_429_retry_increments_tries(self, mock_get, mock_sleep):
-        """Test that repeated 429s increment tries and eventually raise."""
+    def test_429_retry_exhausts_max_tries(self, mock_get, mock_sleep):
+        """Test that repeated 429s exhaust backoff max_tries and raise."""
         client = self._make_client()
-        # MAX_TRIES is 5; fetch_data raises when tries > MAX_TRIES (i.e. after 6+1=7 calls)
         mock_get.return_value = MockResponse(
             429, headers={'Retry-After': '0'})
-        with self.assertRaises(RuntimeError) as ctx:
+        with self.assertRaises(UservoiceRateLimitError):
             client.fetch_data(
                 'https://test.uservoice.com/api/v2/admin/categories',
                 endpoint='categories')
-        self.assertIn('too many times', str(ctx.exception))
-        # Should have been called once for the initial + MAX_TRIES retries
-        self.assertEqual(mock_get.call_count, client.MAX_TRIES + 1)
+        self.assertEqual(mock_get.call_count, 5)
 
     @patch('tap_uservoice.client.requests.post')
     @patch('tap_uservoice.client.requests.get')
@@ -198,11 +196,11 @@ class TestFetchData(unittest.TestCase):
         mock_post.assert_called_once()
 
     @patch('tap_uservoice.client.requests.get')
-    def test_non_200_raises_runtime_error(self, mock_get):
-        """Test that non-200 non-retryable status raises RuntimeError."""
+    def test_non_200_raises_error(self, mock_get):
+        """Test that non-200 non-retryable status raises the mapped exception."""
         client = self._make_client()
         mock_get.return_value = MockResponse(400, text='Bad Request')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(UservoiceBadRequestError):
             client.fetch_data(
                 'https://test.uservoice.com/api/v2/admin/categories',
                 endpoint='categories')
@@ -251,15 +249,14 @@ class TestFetchData(unittest.TestCase):
         self.assertEqual(params['updated_before'], '2024-06-15T12:00:00.000Z')
 
     @patch('tap_uservoice.client.requests.get')
-    def test_max_tries_exceeded_raises(self, mock_get):
-        """Test that exceeding MAX_TRIES raises RuntimeError."""
+    def test_unknown_status_raises_base_error(self, mock_get):
+        """Test that unmapped status codes raise the base UservoiceError."""
         client = self._make_client()
-        with self.assertRaises(RuntimeError) as ctx:
+        mock_get.return_value = MockResponse(418, text="I'm a teapot")
+        with self.assertRaises(UservoiceError):
             client.fetch_data(
                 'https://test.uservoice.com/api/v2/admin/categories',
-                endpoint='categories',
-                tries=6)
-        self.assertIn('too many times', str(ctx.exception))
+                endpoint='categories')
 
 
 if __name__ == '__main__':

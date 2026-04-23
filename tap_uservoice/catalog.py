@@ -16,8 +16,13 @@ def load_catalog(filename):
     try:
         with open(filename) as handle:
             catalog = json.load(handle)
-    except Exception:
+    except json.JSONDecodeError as e:
         LOGGER.fatal("Failed to decode catalog file. Is it valid json?")
-        raise RuntimeError
+        raise RuntimeError(
+            f'Catalog file is not valid JSON: {filename}') from e
+    except IOError as e:
+        LOGGER.fatal("Failed to read catalog file '%s'", filename)
+        raise RuntimeError(
+            f'Cannot read catalog file: {filename}') from e
 
     return catalog

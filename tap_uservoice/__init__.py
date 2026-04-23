@@ -1,31 +1,29 @@
 #!/usr/bin/env python3
 
-import argparse
 import json
 import sys
 
 import singer
 
-from tap_uservoice.catalog import is_selected, load_catalog
+from tap_uservoice.catalog import is_selected
 from tap_uservoice.client import UservoiceClient
-from tap_uservoice.config import load_config
-from tap_uservoice.state import load_state, save_state
+from tap_uservoice.config import validate_config
+from tap_uservoice.state import save_state
 
 from tap_uservoice.streams import AVAILABLE_STREAMS
 
 LOGGER = singer.get_logger()  # noqa
 
+REQUIRED_CONFIG_KEYS = ['api_key', 'api_secret', 'subdomain']
 
-def do_discover(args):
+
+def do_discover(config):
     LOGGER.info("Starting discovery.")
-
-    config = load_config(args.config)
-    state = load_state(args.state)
 
     catalog = []
 
     for available_stream in AVAILABLE_STREAMS:
-        stream = available_stream(config, state, None, None)
+        stream = available_stream(config, {}, None, None)
 
         catalog += stream.generate_catalog()
 
@@ -51,16 +49,10 @@ def get_streams_to_replicate(config, state, catalog, client):
     return streams
 
 
-def do_sync(args):
+def do_sync(config, state, catalog):
     LOGGER.info("Starting sync.")
 
-    config = load_config(args.config)
-    state = load_state(args.state)
-    catalog = None
-    if args.properties:
-        catalog = load_catalog(args.properties)
-    elif args.catalog:
-        catalog = singer.Catalog.load(args.catalog)
+    validate_config(config)
 
     client = UservoiceClient(config)
     client.authorize()
@@ -77,45 +69,23 @@ def do_sync(args):
             exit(e.errno)
 
         except Exception as e:
-            LOGGER.error(str(e))
-            LOGGER.error('Failed to sync endpoint {}, moving on!'
-                         .format(stream.TABLE))
+            LOGGER.error('Failed to sync endpoint %s: %s',
+                         stream.TABLE, e, exc_info=True)
+            raise
 
     save_state(state)
 
 
 @singer.utils.handle_top_exception(LOGGER)
 def main():
-    args = singer.utils.parse_args(
-        required_config_keys=['api_key', 'api_secret', 'subdomain'])
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        '-c', '--config', help='Config file', required=True)
-    parser.add_argument(
-        '-s', '--state', help='State file')
-    parser.add_argument(
-        '-p', '--properties', help='Catalog file with fields selected')
-    parser.add_argument(
-        '--catalog', help='Catalog file')
-
-    parser.add_argument(
-        '-d', '--discover',
-        help='Build a catalog from the underlying schema',
-        action='store_true')
-    parser.add_argument(
-        '-S', '--select-all',
-        help=('When "--discover" is set, this flag selects all fields for '
-              'replication in the generated catalog'),
-        action='store_true')
-
-    args = parser.parse_args()
+    args = singer.utils.parse_args(REQUIRED_CONFIG_KEYS)
 
     if args.discover:
-        do_discover(args)
-    elif args.properties or args.catalog:
-        do_sync(args)
+        do_discover(args.config)
+    elif args.catalog:
+        do_sync(args.config, args.state, args.catalog.to_dict())
+    elif args.properties:
+        do_sync(args.config, args.state, args.properties)
 
 
 if __name__ == '__main__':
