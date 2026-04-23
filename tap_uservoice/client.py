@@ -1,4 +1,3 @@
-import time
 import backoff
 import requests
 import requests.exceptions
