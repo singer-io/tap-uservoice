@@ -9,7 +9,25 @@ class UservoiceError(Exception):
 
 class UservoiceBackoffError(UservoiceError):
     """Base class for retryable errors."""
-    pass
+
+    def __init__(self, message=None, response=None):
+        self.response = response
+
+        # Parse Retry-After header, fallback to None
+        try:
+            self.retry_after = (
+                int(response.headers.get('Retry-After'))
+                if response and hasattr(response, 'headers')
+                and response.headers.get('Retry-After') is not None
+                else None
+            )
+        except (ValueError, TypeError):
+            self.retry_after = None
+
+        base_msg = message or "Rate limit hit"
+        if self.retry_after is not None:
+            base_msg = f"{base_msg} (Retry after {self.retry_after} seconds.)"
+        super().__init__(base_msg, response=response)
 
 
 class UservoiceAuthError(UservoiceError):
@@ -22,7 +40,7 @@ class UservoiceBadRequestError(UservoiceError):
     pass
 
 
-class UservoiceUnauthorizedError(UservoiceBackoffError):
+class UservoiceUnauthorizedError(UservoiceError):
     """401 status code — triggers re-auth and retry."""
     pass
 

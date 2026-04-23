@@ -1,3 +1,4 @@
+import sys
 import backoff
 import requests
 import requests.exceptions
@@ -17,6 +18,38 @@ from tap_uservoice.exceptions import (
 
 LOGGER = singer.get_logger()  # noqa
 REQUEST_TIMEOUT = 300
+
+
+def wait_if_retry_after(**kwargs):
+    """Backoff wait generator that respects API rate-limit headers.
+
+    Lookup order:
+      1. exc.retry_after  - set by UservoiceRateLimitError from Retry-After header
+      2. Retry-After response header on exc.response (fallback)
+      3. Fall back to default exponential backoff
+    """
+    expo_gen = backoff.expo(factor=2)
+    while True:
+        expo_value = next(expo_gen)
+        exc = sys.exc_info()[1]
+        retry_after = getattr(exc, 'retry_after', None)
+
+        if not retry_after:
+            response = getattr(exc, 'response', None)
+            if response is not None and hasattr(response, 'headers'):
+                header_val = response.headers.get('Retry-After')
+                if header_val:
+                    try:
+                        retry_after = int(header_val)
+                    except (ValueError, TypeError):
+                        retry_after = None
+
+        if retry_after:
+            wait = max(retry_after, 1)
+            LOGGER.info('Rate limited. Honoring Retry-After: %s seconds', wait)
+            yield wait
+        else:
+            yield expo_value
 
 
 def raise_for_error(response: requests.Response) -> None:
@@ -43,9 +76,10 @@ def raise_for_error(response: requests.Response) -> None:
             "raise_exception", UservoiceError
         )
 
-        # For 5xx errors, use backoff exception if not specifically mapped
+        # For unmapped 5xx errors, raise a retryable server-error exception
+        # so that _make_request's @backoff.on_exception actually retries them.
         if 500 <= response.status_code < 600 and response.status_code not in ERROR_CODE_EXCEPTION_MAPPING:
-            exc = UservoiceBackoffError
+            exc = UservoiceInternalServerError
 
         raise exc(message, response) from None
 
@@ -68,7 +102,7 @@ class UservoiceClient:
         }
 
         try:
-            response = requests.post(url, data=data)
+            response = requests.post(url, data=data, timeout=REQUEST_TIMEOUT)
         except requests.exceptions.RequestException as e:
             raise UservoiceAuthError(
                 f'Network error during authorization: {e}') from e
@@ -113,7 +147,7 @@ class UservoiceClient:
                 f'Invalid JSON in response for {endpoint}') from e
 
     @backoff.on_exception(
-        wait_gen=backoff.expo,
+        wait_gen=wait_if_retry_after,
         exception=(
             requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
@@ -122,7 +156,7 @@ class UservoiceClient:
             UservoiceServiceUnavailableError,
         ),
         max_tries=5,
-        factor=2,
+        jitter=None,
     )
     def _make_request(self, url, params, endpoint):
         """Perform the HTTP GET with retry via backoff decorator."""
