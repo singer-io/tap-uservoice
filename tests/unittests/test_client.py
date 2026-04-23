@@ -225,13 +225,16 @@ class TestFetchData(unittest.TestCase):
 
     @patch('tap_uservoice.client.requests.get')
     def test_non_200_raises_error(self, mock_get):
-        """Test that non-200 non-retryable status raises the mapped exception."""
+        """Test that non-200 non-retryable status raises the mapped exception
+        and is NOT retried."""
         client = self._make_client()
         mock_get.return_value = MockResponse(400, text='Bad Request')
         with self.assertRaises(UservoiceBadRequestError):
             client.fetch_data(
                 'https://test.uservoice.com/api/v2/admin/categories',
                 endpoint='categories')
+        # 400 must NOT be retried
+        self.assertEqual(mock_get.call_count, 1)
 
     @patch('tap_uservoice.client.requests.get')
     def test_fetch_with_cursor(self, mock_get):
@@ -278,13 +281,16 @@ class TestFetchData(unittest.TestCase):
 
     @patch('tap_uservoice.client.requests.get')
     def test_unknown_status_raises_base_error(self, mock_get):
-        """Test that unmapped status codes raise the base UservoiceError."""
+        """Test that unmapped non-5xx status codes raise UservoiceError
+        and are NOT retried."""
         client = self._make_client()
         mock_get.return_value = MockResponse(418, text="I'm a teapot")
         with self.assertRaises(UservoiceError):
             client.fetch_data(
                 'https://test.uservoice.com/api/v2/admin/categories',
                 endpoint='categories')
+        # Unmapped 4xx must NOT be retried
+        self.assertEqual(mock_get.call_count, 1)
 
     @patch('backoff._sync.time.sleep', return_value=None)
     @patch('tap_uservoice.client.requests.get')
@@ -399,6 +405,26 @@ class TestFetchData(unittest.TestCase):
                 endpoint='categories')
         self.assertEqual(mock_get.call_count, 5)
 
+    @patch('tap_uservoice.client.time.sleep', return_value=None)
+    @patch('tap_uservoice.client.requests.get')
+    def test_500_with_retry_after_header_does_not_honor_it(self, mock_get, mock_sleep):
+        """Test that 500 with a Retry-After header does NOT trigger the
+        on_backoff handler sleep. Only 429 (UservoiceRateLimitError)
+        parses Retry-After; 500 uses plain expo backoff."""
+        client = self._make_client()
+        mock_get.side_effect = [
+            MockResponse(500, headers={'Retry-After': '99999999'}),
+            MockResponse(200, {'data': 'ok'}),
+        ]
+        result = client.fetch_data(
+            'https://test.uservoice.com/api/v2/admin/categories',
+            endpoint='categories')
+        self.assertEqual(result, {'data': 'ok'})
+        self.assertEqual(mock_get.call_count, 2)
+        # Only expo backoff sleep(2) should have been called, NOT sleep(99999999)
+        sleep_values = [call[0][0] for call in mock_sleep.call_args_list]
+        self.assertEqual(sleep_values, [2], 'Only expo(factor=2) sleep expected, no Retry-After')
+
     @patch('tap_uservoice.client.requests.post')
     def test_authorize_uses_timeout(self, mock_post):
         """Test that authorize() passes timeout to requests.post."""
@@ -415,14 +441,16 @@ class TestFetchData(unittest.TestCase):
         call_kwargs = mock_post.call_args
         self.assertEqual(call_kwargs[1]['timeout'], REQUEST_TIMEOUT)
 
-    @patch('backoff._sync.time.sleep', return_value=None)
+    @patch('tap_uservoice.client.time.sleep', return_value=None)
     @patch('tap_uservoice.client.requests.get')
-    def test_429_retry_after_header_is_parsed(self, mock_get, mock_sleep):
-        """Test that Retry-After header is parsed into the exception's
-        retry_after attribute and used by the backoff handler."""
+    @patch('tap_uservoice.exceptions.time.time')
+    def test_429_retry_after_header_is_parsed(self, mock_time, mock_get, mock_sleep):
+        """Test that Retry-After epoch header is converted to wait duration
+        and used by the on_backoff handler."""
+        mock_time.return_value = 1000.0  # freeze current time
         client = self._make_client()
         mock_get.side_effect = [
-            MockResponse(429, headers={'Retry-After': '10'}),
+            MockResponse(429, headers={'Retry-After': '1010'}),  # epoch 10s in future
             MockResponse(200, {'data': 'ok'}),
         ]
         result = client.fetch_data(
@@ -430,11 +458,13 @@ class TestFetchData(unittest.TestCase):
             endpoint='categories')
         self.assertEqual(result, {'data': 'ok'})
         self.assertEqual(mock_get.call_count, 2)
-        # time.sleep was called at least once (by backoff), and the
-        # on_backoff handler should have overridden the wait to 10
-        mock_sleep.assert_called()
-        actual_wait = mock_sleep.call_args[0][0]
-        self.assertEqual(actual_wait, 10)
+        # time.sleep is called twice (same module for handler and backoff):
+        #   1) on_backoff handler: time.sleep(10) from Retry-After (1010 - 1000)
+        #   2) backoff library: time.sleep(2) from expo(factor=2) first interval
+        sleep_values = [call[0][0] for call in mock_sleep.call_args_list]
+        self.assertIn(10, sleep_values, 'Handler should sleep Retry-After duration')
+        self.assertIn(2, sleep_values, 'Backoff should sleep expo(factor=2) value')
+        self.assertEqual(len(sleep_values), 2, 'Exactly two sleeps expected')
 
     @patch('backoff._sync.time.sleep', return_value=None)
     @patch('tap_uservoice.client.requests.get')
@@ -451,25 +481,40 @@ class TestFetchData(unittest.TestCase):
         self.assertEqual(result, {'data': 'ok'})
         # Still retried
         self.assertEqual(mock_get.call_count, 2)
-        # Backoff used exponential wait (not overridden by handler)
-        mock_sleep.assert_called()
+        # Backoff used expo(factor=2): first retry waits 2 seconds
+        mock_sleep.assert_called_once_with(2)
 
 
 class TestRateLimitErrorRetryAfter(unittest.TestCase):
-    """Test that UservoiceRateLimitError parses Retry-After header."""
+    """Test that UservoiceRateLimitError parses Retry-After epoch header.
 
-    def test_retry_after_parsed_from_header(self):
-        """Test retry_after is set from Retry-After header."""
-        resp = MockResponse(429, headers={'Retry-After': '30'})
+    Uservoice API returns Retry-After as a Unix epoch timestamp,
+    not a duration. The exception converts it to wait seconds.
+    """
+
+    @patch('tap_uservoice.exceptions.time.time')
+    def test_retry_after_epoch_converted_to_wait_duration(self, mock_time):
+        """Test Retry-After epoch is converted to seconds to wait."""
+        mock_time.return_value = 1000.0  # current time
+        resp = MockResponse(429, headers={'Retry-After': '1030'})  # epoch 30s in future
         exc = UservoiceRateLimitError('rate limited', resp)
         self.assertEqual(exc.retry_after, 30)
-        self.assertIn('Retry after 30 seconds', str(exc))
 
-    def test_retry_after_zero(self):
-        """Test retry_after is 0 when header is '0'."""
-        resp = MockResponse(429, headers={'Retry-After': '0'})
+    @patch('tap_uservoice.exceptions.time.time')
+    def test_retry_after_epoch_in_past_clamps_to_1(self, mock_time):
+        """Test that an epoch in the past clamps to minimum 1 second."""
+        mock_time.return_value = 2000.0
+        resp = MockResponse(429, headers={'Retry-After': '1500'})  # epoch in the past
         exc = UservoiceRateLimitError('rate limited', resp)
-        self.assertEqual(exc.retry_after, 0)
+        self.assertEqual(exc.retry_after, 1)
+
+    @patch('tap_uservoice.exceptions.time.time')
+    def test_retry_after_epoch_equal_to_now_clamps_to_1(self, mock_time):
+        """Test that an epoch equal to now clamps to 1 second."""
+        mock_time.return_value = 1000.0
+        resp = MockResponse(429, headers={'Retry-After': '1000'})
+        exc = UservoiceRateLimitError('rate limited', resp)
+        self.assertEqual(exc.retry_after, 1)
 
     def test_retry_after_missing_header(self):
         """Test retry_after is None when header is absent."""

@@ -1,4 +1,4 @@
-import sys
+import time
 import backoff
 import requests
 import requests.exceptions
@@ -20,36 +20,17 @@ LOGGER = singer.get_logger()  # noqa
 REQUEST_TIMEOUT = 300
 
 
-def wait_if_retry_after(**kwargs):
-    """Backoff wait generator that respects API rate-limit headers.
-
-    Lookup order:
-      1. exc.retry_after  - set by UservoiceRateLimitError from Retry-After header
-      2. Retry-After response header on exc.response (fallback)
-      3. Fall back to default exponential backoff
+def wait_if_retry_after(details):
+    """Backoff handler that checks for a 'retry_after' attribute in the exception
+    and sleeps for the specified duration to respect API rate limits.
     """
-    expo_gen = backoff.expo(factor=2)
-    while True:
-        expo_value = next(expo_gen)
-        exc = sys.exc_info()[1]
-        retry_after = getattr(exc, 'retry_after', None)
-
-        if not retry_after:
-            response = getattr(exc, 'response', None)
-            if response is not None and hasattr(response, 'headers'):
-                header_val = response.headers.get('Retry-After')
-                if header_val:
-                    try:
-                        retry_after = int(header_val)
-                    except (ValueError, TypeError):
-                        retry_after = None
-
-        if retry_after:
-            wait = max(retry_after, 1)
-            LOGGER.info('Rate limited. Honoring Retry-After: %s seconds', wait)
-            yield wait
-        else:
-            yield expo_value
+    exc = details.get('exception')
+    if exc is None:
+        args = details.get('args') or ()
+        exc = args[0] if args else None
+    if exc and hasattr(exc, 'retry_after') and exc.retry_after is not None:
+        LOGGER.info('Rate limited. Honoring Retry-After: %s seconds', exc.retry_after)
+        time.sleep(exc.retry_after)
 
 
 def raise_for_error(response: requests.Response) -> None:
@@ -140,6 +121,9 @@ class UservoiceClient:
         with singer.metrics.http_request_timer(endpoint):
             response = self._make_request(url, request_data, endpoint)
 
+        if response.status_code == 204:
+            return {}
+
         try:
             return response.json()
         except ValueError as e:
@@ -147,7 +131,8 @@ class UservoiceClient:
                 f'Invalid JSON in response for {endpoint}') from e
 
     @backoff.on_exception(
-        wait_gen=wait_if_retry_after,
+        wait_gen=lambda: backoff.expo(factor=2),
+        on_backoff=wait_if_retry_after,
         exception=(
             requests.exceptions.ConnectionError,
             requests.exceptions.Timeout,
