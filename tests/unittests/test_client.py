@@ -127,7 +127,7 @@ class TestFetchData(unittest.TestCase):
         params = call_kwargs[1]['params']
         self.assertEqual(params['per_page'], 100)
 
-    @patch('tap_uservoice.client.time.sleep')
+    @patch('backoff._sync.time.sleep', return_value=None)
     @patch('tap_uservoice.client.requests.get')
     def test_429_rate_limit_retries(self, mock_get, mock_sleep):
         """Test that 429 status triggers backoff retry."""
