@@ -7,7 +7,6 @@ import singer
 
 from tap_uservoice.catalog import is_selected
 from tap_uservoice.client import UservoiceClient
-from tap_uservoice.config import validate_config
 from tap_uservoice.state import save_state
 
 from tap_uservoice.streams import AVAILABLE_STREAMS
@@ -51,8 +50,6 @@ def get_streams_to_replicate(config, state, catalog, client):
 
 def do_sync(config, state, catalog):
     LOGGER.info("Starting sync.")
-
-    validate_config(config)
 
     client = UservoiceClient(config)
     client.authorize()
