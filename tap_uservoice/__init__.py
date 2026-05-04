@@ -4,8 +4,7 @@ import json
 import sys
 
 import singer
-
-from tap_uservoice.catalog import is_selected
+from singer import metadata
 from tap_uservoice.client import UservoiceClient
 from tap_uservoice.state import save_state
 
@@ -14,6 +13,10 @@ from tap_uservoice.streams import AVAILABLE_STREAMS
 LOGGER = singer.get_logger()  # noqa
 
 REQUIRED_CONFIG_KEYS = ['api_key', 'api_secret', 'subdomain']
+
+def is_selected(stream):
+    mdata = metadata.to_map(stream.get('metadata'))
+    return mdata.get((), {}).get('selected', False)
 
 
 def do_discover(config):

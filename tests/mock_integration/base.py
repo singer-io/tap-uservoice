@@ -22,7 +22,6 @@ from singer import metadata
 
 import tap_uservoice
 from tap_uservoice.streams import AVAILABLE_STREAMS
-from tap_uservoice.catalog import is_selected
 from .mock_data_generator import MockDataGenerator
 
 
