@@ -14,9 +14,8 @@ tap-tester dependency required.
   generator to the tap's real sync logic.
 """
 import copy
-import unittest
-from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from datetime import timedelta, timezone
+from unittest.mock import MagicMock
 
 from singer import metadata
 

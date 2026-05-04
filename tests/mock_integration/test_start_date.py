@@ -4,7 +4,7 @@ prior state picks up where it left off."""
 import unittest
 from unittest.mock import patch
 
-from .base import UservoiceMockBaseTest, RECENT_DATA_SEED
+from .base import UservoiceMockBaseTest
 
 
 class StartDateIntegrationTest(UservoiceMockBaseTest, unittest.TestCase):

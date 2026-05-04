@@ -7,7 +7,6 @@ from tap_uservoice.exceptions import (
     UservoiceBadRequestError,
     UservoiceRateLimitError,
     UservoiceInternalServerError,
-    UservoiceServiceUnavailableError,
 )
 
 

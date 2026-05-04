@@ -8,9 +8,7 @@ import singer.metrics
 from tap_uservoice.exceptions import (
     ERROR_CODE_EXCEPTION_MAPPING,
     UservoiceError,
-    UservoiceBackoffError,
     UservoiceAuthError,
-    UservoiceUnauthorizedError,
     UservoiceRateLimitError,
     UservoiceInternalServerError,
     UservoiceServiceUnavailableError,

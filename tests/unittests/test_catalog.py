@@ -1,7 +1,5 @@
 import unittest
-from unittest.mock import Mock
 
-from tap_uservoice.streams.base import BaseStream
 from tap_uservoice.streams import AVAILABLE_STREAMS
 
 
