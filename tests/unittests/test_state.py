@@ -1,7 +1,7 @@
 import unittest
 import unittest.mock
 
-from tap_uservoice.state import incorporate, get_last_record_value_for_table, save_state, load_state
+from tap_uservoice.state import incorporate, get_last_record_value_for_table, save_state
 
 
 class TestIncorporate(unittest.TestCase):
@@ -121,29 +121,6 @@ class TestSaveState(unittest.TestCase):
         mock_write_state.assert_not_called()
         save_state(None)
         mock_write_state.assert_not_called()
-
-
-class TestLoadState(unittest.TestCase):
-    """Test the load_state function."""
-
-    def test_load_state_none_filename(self):
-        """Test that None filename returns empty dict."""
-        result = load_state(None)
-        self.assertEqual(result, {})
-
-    @unittest.mock.patch('builtins.open',
-                         unittest.mock.mock_open(read_data='{"bookmarks": {}}'))
-    def test_load_state_valid_file(self):
-        """Test loading valid state file."""
-        result = load_state('/tmp/state.json')
-        self.assertEqual(result, {'bookmarks': {}})
-
-    @unittest.mock.patch('builtins.open',
-                         unittest.mock.mock_open(read_data='invalid json'))
-    def test_load_state_invalid_json_raises(self):
-        """Test that invalid JSON raises Exception."""
-        with self.assertRaises(Exception):
-            load_state('/tmp/bad_state.json')
 
 
 if __name__ == '__main__':

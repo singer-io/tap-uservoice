@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
-import pytz
+from datetime import datetime, timedelta, timezone
 
 from tap_uservoice.streams.base import BaseStream
 from tap_uservoice.streams.categories import CategoriesStream
@@ -126,11 +125,10 @@ class TestBaseStreamSync(unittest.TestCase):
     @patch('tap_uservoice.streams.base.save_state')
     @patch('tap_uservoice.streams.base.singer.write_record')
     @patch('tap_uservoice.streams.base.singer.write_schema')
-    @patch('tap_uservoice.streams.base.get_config_start_date')
-    def test_sync_data_writes_records(self, mock_start_date, mock_write_schema,
+    def test_sync_data_writes_records(self, mock_write_schema,
                                        mock_write_record, mock_save_state):
         """Test that sync_data calls write_record for each data item."""
-        mock_start_date.return_value = datetime.now(pytz.utc) - timedelta(days=1)
+        start = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         client = _make_mock_client()
         client.fetch_data.return_value = {
@@ -143,7 +141,7 @@ class TestBaseStreamSync(unittest.TestCase):
 
         catalog = _make_catalog(CategoriesStream)
         stream = CategoriesStream(
-            config={'subdomain': 'test', 'start_date': '2024-01-01T00:00:00Z'},
+            config={'subdomain': 'test', 'start_date': start},
             state={},
             catalog=catalog,
             client=client
@@ -154,11 +152,10 @@ class TestBaseStreamSync(unittest.TestCase):
     @patch('tap_uservoice.streams.base.save_state')
     @patch('tap_uservoice.streams.base.singer.write_record')
     @patch('tap_uservoice.streams.base.singer.write_schema')
-    @patch('tap_uservoice.streams.base.get_config_start_date')
-    def test_sync_incorporates_bookmark(self, mock_start_date, mock_write_schema,
+    def test_sync_incorporates_bookmark(self, mock_write_schema,
                                          mock_write_record, mock_save_state):
         """Test that sync updates bookmark state."""
-        mock_start_date.return_value = datetime.now(pytz.utc) - timedelta(days=1)
+        start = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         client = _make_mock_client()
         client.fetch_data.return_value = {
@@ -171,7 +168,7 @@ class TestBaseStreamSync(unittest.TestCase):
 
         catalog = _make_catalog(CategoriesStream)
         stream = CategoriesStream(
-            config={'subdomain': 'test', 'start_date': '2024-01-01T00:00:00Z'},
+            config={'subdomain': 'test', 'start_date': start},
             state={},
             catalog=catalog,
             client=client
@@ -183,11 +180,10 @@ class TestBaseStreamSync(unittest.TestCase):
     @patch('tap_uservoice.streams.base.save_state')
     @patch('tap_uservoice.streams.base.singer.write_record')
     @patch('tap_uservoice.streams.base.singer.write_schema')
-    @patch('tap_uservoice.streams.base.get_config_start_date')
-    def test_sync_no_data_moves_on(self, mock_start_date, mock_write_schema,
+    def test_sync_no_data_moves_on(self, mock_write_schema,
                                     mock_write_record, mock_save_state):
         """Test that sync handles empty data gracefully."""
-        mock_start_date.return_value = datetime.now(pytz.utc) - timedelta(days=1)
+        start = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         client = _make_mock_client()
         client.fetch_data.return_value = {
@@ -197,7 +193,7 @@ class TestBaseStreamSync(unittest.TestCase):
 
         catalog = _make_catalog(CategoriesStream)
         stream = CategoriesStream(
-            config={'subdomain': 'test', 'start_date': '2024-01-01T00:00:00Z'},
+            config={'subdomain': 'test', 'start_date': start},
             state={},
             catalog=catalog,
             client=client

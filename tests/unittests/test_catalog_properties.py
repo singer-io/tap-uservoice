@@ -10,7 +10,6 @@ from tap_uservoice.streams.suggestions import SuggestionsStream
 from tap_uservoice.streams.users import UsersStream
 from tap_uservoice.streams.forums import ForumsStream
 from tap_uservoice.streams.features import FeaturesStream
-from tap_uservoice.streams.labels import LabelsStream
 from tap_uservoice.streams.teams import TeamsStream
 
 

@@ -14,16 +14,13 @@ tap-tester dependency required.
   generator to the tap's real sync logic.
 """
 import copy
-import unittest
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from datetime import timedelta, timezone
+from unittest.mock import MagicMock
 
-import pytz
 from singer import metadata
 
 import tap_uservoice
 from tap_uservoice.streams import AVAILABLE_STREAMS
-from tap_uservoice.catalog import is_selected
 from .mock_data_generator import MockDataGenerator
 
 
@@ -207,7 +204,7 @@ class UservoiceMockBaseTest:
                 stream_cls = STREAM_CLASS_MAP[stream_name]
                 # If updated_after is recent, return "recent" data
                 base_date_aware = MockDataGenerator.BASE_DATE.replace(
-                    tzinfo=pytz.UTC)
+                    tzinfo=timezone.utc)
                 if updated_after and updated_after > base_date_aware:
                     records = MockDataGenerator.generate_records(
                         stream_cls, 1, base_seed=RECENT_DATA_SEED)

@@ -1,14 +1,69 @@
 import time
+import backoff
 import requests
+import requests.exceptions
 import singer
 import singer.metrics
 
+from tap_uservoice.exceptions import (
+    ERROR_CODE_EXCEPTION_MAPPING,
+    UservoiceError,
+    UservoiceAuthError,
+    UservoiceRateLimitError,
+    UservoiceInternalServerError,
+    UservoiceServiceUnavailableError,
+)
+
 LOGGER = singer.get_logger()  # noqa
+REQUEST_TIMEOUT = 300
+
+
+def wait_if_retry_after(details):
+    """Backoff handler that checks for a 'retry_after' attribute in the exception
+    and sleeps for the specified duration to respect API rate limits.
+    """
+    exc = details.get('exception')
+    if exc is None:
+        args = details.get('args') or ()
+        exc = args[0] if args else None
+    if exc and hasattr(exc, 'retry_after') and exc.retry_after is not None:
+        LOGGER.info('Rate limited. Honoring Retry-After: %s seconds', exc.retry_after)
+        time.sleep(exc.retry_after)
+
+
+def raise_for_error(response: requests.Response) -> None:
+    """Raises the associated response exception. Takes in a response object,
+    checks the status code, and throws the associated exception based on the
+    status code.
+
+    :param response: requests.Response object
+    """
+    try:
+        response_json = response.json()
+    except Exception:
+        response_json = {}
+    if response.status_code not in [200, 201, 204]:
+        if response_json.get("error"):
+            message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('error')}"
+        else:
+            error_message = ERROR_CODE_EXCEPTION_MAPPING.get(
+                response.status_code, {}
+            ).get("message", "Unknown Error")
+            message = f"HTTP-error-code: {response.status_code}, Error: {response_json.get('message', error_message)}"
+
+        exc = ERROR_CODE_EXCEPTION_MAPPING.get(response.status_code, {}).get(
+            "raise_exception", UservoiceError
+        )
+
+        # For unmapped 5xx errors, raise a retryable server-error exception
+        # so that _make_request's @backoff.on_exception actually retries them.
+        if 500 <= response.status_code < 600 and response.status_code not in ERROR_CODE_EXCEPTION_MAPPING:
+            exc = UservoiceInternalServerError
+
+        raise exc(message, response) from None
 
 
 class UservoiceClient:
-
-    MAX_TRIES = 5
 
     def __init__(self, config):
         self.config = config
@@ -25,11 +80,17 @@ class UservoiceClient:
             'client_secret': self.config.get('api_secret'),
         }
 
-        response = requests.post(url, data=data)
+        try:
+            response = requests.post(url, data=data, timeout=REQUEST_TIMEOUT)
+        except requests.exceptions.RequestException as e:
+            raise UservoiceAuthError(
+                f'Network error during authorization: {e}') from e
 
         if response.status_code != 200:
             LOGGER.error(response.text)
-            raise RuntimeError('Failed to authorize with Uservoice API!')
+            raise UservoiceAuthError(
+                f'Failed to authorize with Uservoice API '
+                f'(status {response.status_code})')
 
         self.access_token = response.json().get('access_token')
 
@@ -38,11 +99,7 @@ class UservoiceClient:
                    updated_after=None,
                    updated_before=None,
                    cursor=None,
-                   endpoint=None,
-                   tries=0):
-
-        if tries > self.MAX_TRIES:
-            raise RuntimeError('Tried request too many times, exiting.')
+                   endpoint=None):
 
         request_data = {}
 
@@ -60,45 +117,56 @@ class UservoiceClient:
         request_data['per_page'] = 100
 
         with singer.metrics.http_request_timer(endpoint):
+            response = self._make_request(url, request_data, endpoint)
+
+        if response.status_code == 204:
+            return {}
+
+        try:
+            return response.json()
+        except ValueError as e:
+            raise UservoiceError(
+                f'Invalid JSON in response for {endpoint}') from e
+
+    @backoff.on_exception(
+        wait_gen=lambda: backoff.expo(factor=2),
+        on_backoff=wait_if_retry_after,
+        exception=(
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+            UservoiceRateLimitError,
+            UservoiceInternalServerError,
+            UservoiceServiceUnavailableError,
+        ),
+        max_tries=5,
+        jitter=None,
+    )
+    def _make_request(self, url, params, endpoint):
+        """Perform the HTTP GET with retry via backoff decorator."""
+        try:
             response = requests.get(
                 url,
                 headers={
                     'Authorization': 'Bearer {}'.format(
                         self.access_token)
                 },
-                params=request_data)
+                params=params,
+                timeout=REQUEST_TIMEOUT)
+        except requests.exceptions.RequestException as e:
+            LOGGER.error('Network error fetching %s: %s', endpoint, e)
+            raise
 
         if response.status_code == 401:
+            LOGGER.info('Got 401, re-authorizing and retrying.')
             self.authorize()
-            return self.fetch_data(
-                url=url,
-                updated_after=updated_after,
-                updated_before=updated_before,
-                cursor=cursor,
-                endpoint=endpoint,
-                tries=tries+1
-            )
+            response = requests.get(
+                url,
+                headers={
+                    'Authorization': 'Bearer {}'.format(
+                        self.access_token)
+                },
+                params=params,
+                timeout=REQUEST_TIMEOUT)
 
-        elif response.status_code == 429:
-            sleep_time = 5
-            sleep_time_str = response.headers.get('Retry-After', None)
-            if sleep_time_str:
-                sleep_time = int(sleep_time_str)
-            LOGGER.warning('Got a 429, sleeping {} seconds '
-                           'and then trying again.'.format(str(sleep_time)))
-            time.sleep(sleep_time)
-            return self.fetch_data(
-                url=url,
-                updated_after=updated_after,
-                updated_before=updated_before,
-                cursor=cursor,
-                endpoint=endpoint,
-                tries=tries+1
-            )
-
-        elif response.status_code != 200:
-            LOGGER.error(response.text)
-            raise RuntimeError('Stream returned code {}, exiting!'
-                               .format(response.status_code))
-
-        return response.json()
+        raise_for_error(response)
+        return response
