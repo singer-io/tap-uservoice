@@ -4,18 +4,26 @@ from setuptools import setup
 
 
 setup(name='tap-uservoice',
-      version='1.0.5',
+      version='1.1.0',
       description='Singer.io tap for extracting data from the Uservoice API',
       author='Fishtown Analytics',
       url='http://fishtownanalytics.com',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_uservoice'],
       install_requires=[
-          'singer-python==5.14.3',
-          'backoff==1.10.0',
+          'singer-python==6.8.0',
+          'backoff==2.2.1',
           'requests==2.32.5',
-          'funcy==1.10.1',
+          'python-dateutil==2.9.0',
+          'funcy==2.0',
       ],
+      extras_require={
+          'dev': [
+              'pylint',
+              'pytest',
+              'coverage',
+          ],
+      },
       entry_points='''
           [console_scripts]
           tap-uservoice=tap_uservoice:main

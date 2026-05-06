@@ -19,7 +19,7 @@ from tap_uservoice.streams.supporters import SupportersStream
 from tap_uservoice.streams.teams import TeamsStream
 from tap_uservoice.streams.users import UsersStream
 
-__all__ = AVAILABLE_STREAMS = [
+AVAILABLE_STREAMS = [
     CategoriesStream,
     CommentsStream,
     ExternalAccountsStream,
