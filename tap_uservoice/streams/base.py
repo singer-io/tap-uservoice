@@ -1,11 +1,10 @@
-from datetime import timedelta, datetime
-import pytz
+from datetime import timedelta, datetime, timezone
 import singer
 import singer.metrics
 
+from dateutil.parser import parse
 from singer import metadata
 from singer import Transformer
-from tap_uservoice.config import get_config_start_date
 from tap_uservoice.state import incorporate, save_state, \
     get_last_record_value_for_table
 
@@ -17,6 +16,7 @@ class BaseStream:
     # ABSTRACT PROPERTIES -- SHOULD BE OVERRIDDEN
     TABLE = None
     SCHEMA = None
+    API_PATH = None
 
     def get_stream_data(self, result):
         """
@@ -155,11 +155,11 @@ class BaseStream:
         date = get_last_record_value_for_table(self.state, table)
 
         if date is None:
-            date = get_config_start_date(self.config)
+            date = parse(self.config.get('start_date'))
 
         interval = timedelta(days=7)
 
-        while date < datetime.now(pytz.utc):
+        while date < datetime.now(timezone.utc):
             self.sync_data_for_date(date, interval)
 
             date = date + interval

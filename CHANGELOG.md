@@ -1,10 +1,18 @@
 # Changelog
 
 ## 1.1.1
-  * Update metadata to use REPLICATION_METHOD instead of REPLICATION_KEY [#13](https://github.com/singer-io/tap-uservoice/pull/13)
+  * Update metadata to use REPLICATION_METHOD instead of REPLICATION_KEY [#12](https://github.com/singer-io/tap-uservoice/pull/12)
+  * Dependencies updates.
 
 ## 1.1.0
-  * Dependencies updates [#12](https://github.com/singer-io/tap-uservoice/pull/12)
+- Updated python version. [#15](https://github.com/singer-io/tap-uservoice/pull/15)
+- Added integration tests.
+- Removed `pytz` dependency, replaced with stdlib `datetime.timezone`. [#16](https://github.com/singer-io/tap-uservoice/pull/16)
+- Improved exception handling with structured error hierarchy.
+- Refactored `main()` to use single `singer.utils.parse_args()` pattern.
+
+## 1.0.5
+  * Bump dependencies [#14](https://github.com/singer-io/tap-uservoice/pull/14)
 
 ## 1.0.4
   * Dependabot update [#8](https://github.com/singer-io/tap-uservoice/pull/8)
