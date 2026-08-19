@@ -105,6 +105,7 @@ class BaseStream:
                 endpoint=table)
 
             cursor = result.get('pagination', {}).get('cursor')
+            page = result.get('pagination', {}).get('pages')
             total_pages = result.get('pagination', {}).get('total_pages')
             data = self.get_stream_data(result)
             has_data = ((data is not None) and (len(data) > 0))
