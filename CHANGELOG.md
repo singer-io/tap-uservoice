@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+  * Update metadata to use REPLICATION_METHOD instead of REPLICATION_KEY [#12](https://github.com/singer-io/tap-uservoice/pull/12)
+  * Dependencies updates.
+
 ## 1.1.0
 - Updated python version. [#15](https://github.com/singer-io/tap-uservoice/pull/15)
 - Added integration tests.

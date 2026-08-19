@@ -45,7 +45,7 @@ class BaseStream:
         mdata = metadata.new()
 
         mdata = metadata.write(mdata, (), 'table-key-properties', cls.KEY_PROPERTIES)
-        mdata = metadata.write(mdata, (), 'forced-replication-method', cls.REPLICATION_KEY)
+        mdata = metadata.write(mdata, (), 'forced-replication-method', cls.REPLICATION_METHOD)
 
         if cls.REPLICATION_KEY:
             mdata = metadata.write(mdata, (), 'valid-replication-keys', [cls.REPLICATION_KEY])
