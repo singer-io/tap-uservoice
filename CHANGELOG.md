@@ -1,11 +1,14 @@
 # Changelog
 
+## 1.1.1
+  * Bump requests to 2.34.2 [#18](https://github.com/singer-io/tap-uservoice/pull/18)
+
 ## 1.1.0
-- Updated python version. [#15](https://github.com/singer-io/tap-uservoice/pull/15)
-- Added integration tests.
-- Removed `pytz` dependency, replaced with stdlib `datetime.timezone`. [#16](https://github.com/singer-io/tap-uservoice/pull/16)
-- Improved exception handling with structured error hierarchy.
-- Refactored `main()` to use single `singer.utils.parse_args()` pattern.
+  * Updated python version. [#15](https://github.com/singer-io/tap-uservoice/pull/15)
+  * Added integration tests.
+  * Removed `pytz` dependency, replaced with stdlib `datetime.timezone`. [#16](https://github.com/singer-io/tap-uservoice/pull/16)
+  * Improved exception handling with structured error hierarchy.
+  * Refactored `main()` to use single `singer.utils.parse_args()` pattern.
 
 ## 1.0.5
   * Bump dependencies [#14](https://github.com/singer-io/tap-uservoice/pull/14)
